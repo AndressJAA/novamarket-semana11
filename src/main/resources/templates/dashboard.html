@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar('dashboard')}"></aside>
+    <button class="sidebar-backdrop" type="button" data-menu-close aria-label="Cerrar navegación"></button>
+
+    <main class="workspace">
+        <header th:replace="~{fragments/layout :: topbar('Dashboard', 'Resumen de pedidos, confirmaciones y eventos')}"></header>
+
+        <div class="page-content">
+            <section class="welcome-strip" aria-labelledby="welcome-title">
+                <div>
+                    <span class="eyebrow">NOVA Market</span>
+                    <h2 id="welcome-title">Control comercial, sin fricción.</h2>
+                    <p>Aplica descuentos con Strategy y coordina confirmaciones trazables mediante Observer.</p>
+                </div>
+                <a class="button button-primary" th:href="@{/orders/new}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
+                    Registrar pedido
+                </a>
+            </section>
+
+            <section class="metrics-grid" aria-label="Indicadores de pedidos">
+                <article class="metric-card metric-card-primary">
+                    <div class="metric-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4V2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h3Zm13 7H4v9h16v-9Z"/></svg></div>
+                    <div>
+                        <p>Pedidos registrados</p>
+                        <strong th:text="${summary.orderCount}">0</strong>
+                        <span>Sesión actual</span>
+                    </div>
+                </article>
+                <article class="metric-card">
+                    <div class="metric-icon metric-icon-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v6l5 3 1-1.7-4-2.3V7Z"/></svg></div>
+                    <div>
+                        <p>Pedidos pendientes</p>
+                        <strong th:text="${summary.pendingOrderCount}">0</strong>
+                        <span>Requieren confirmación</span>
+                    </div>
+                </article>
+                <article class="metric-card">
+                    <div class="metric-icon metric-icon-success"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1.2 14.4 6.7-6.7-1.4-1.4-5.3 5.3-2.9-2.9-1.4 1.4 4.3 4.3Z"/></svg></div>
+                    <div>
+                        <p>Pedidos confirmados</p>
+                        <strong th:text="${summary.confirmedOrderCount}">0</strong>
+                        <span>Flujo Observer ejecutado</span>
+                    </div>
+                </article>
+                <article class="metric-card">
+                    <div class="metric-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6l-2 3-2-3H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm3 5v2h10V8H7Zm0 4v2h7v-2H7Z"/></svg></div>
+                    <div>
+                        <p>Eventos generados</p>
+                        <strong th:text="${eventSummary.eventCount}">0</strong>
+                        <span><span th:text="${eventSummary.processingCount}">0</span> acciones registradas</span>
+                    </div>
+                </article>
+            </section>
+
+            <section class="commercial-summary" aria-label="Resumen financiero">
+                <div><span>Importe bruto</span><strong>S/ <span th:text="${#numbers.formatDecimal(summary.grossAmount, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong></div>
+                <div><span>Descuentos Strategy</span><strong class="amount-discount">− S/ <span th:text="${#numbers.formatDecimal(summary.discountAmount, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong></div>
+                <div><span>Total neto</span><strong>S/ <span th:text="${#numbers.formatDecimal(summary.netAmount, 1, 'POINT', 2, 'COMMA')}">0,00</span></strong></div>
+                <a class="text-link" th:href="@{/events}">Ver trazabilidad Observer <span aria-hidden="true">→</span></a>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Pedidos recientes</h2>
+                        <p>Últimos movimientos registrados en la sesión.</p>
+                    </div>
+                    <a class="text-link" th:href="@{/orders}">Ver todos <span aria-hidden="true">→</span></a>
+                </div>
+
+                <div class="empty-state" th:if="${#lists.isEmpty(recentOrders)}">
+                    <div class="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4V2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h3Zm13 7H4v9h16v-9Z"/></svg></div>
+                    <h3>Aún no hay pedidos</h3>
+                    <p>Registra el primer pedido para ver indicadores y descuentos calculados.</p>
+                    <a class="button button-secondary" th:href="@{/orders/new}">Crear primer pedido</a>
+                </div>
+
+                <div class="table-scroll" th:unless="${#lists.isEmpty(recentOrders)}">
+                    <table class="data-table">
+                        <thead><tr><th>Pedido</th><th>Cliente</th><th>Categoría</th><th>Descuento</th><th>Total</th><th>Estado</th></tr></thead>
+                        <tbody>
+                        <tr th:each="order : ${recentOrders}">
+                            <td><a class="table-order-link" th:href="@{/orders/{id}(id=${order.id})}" th:text="${'#' + order.id}">#1</a><small th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">Fecha</small></td>
+                            <td><strong th:text="${order.customer.name}">Cliente</strong><small th:text="${order.customer.document}">Documento</small></td>
+                            <td th:text="${order.customer.category.displayName}">Categoría</td>
+                            <td class="amount-discount">− S/ <span th:text="${#numbers.formatDecimal(order.discount.discountAmount, 1, 'POINT', 2, 'COMMA')}">0,00</span></td>
+                            <td class="amount-strong">S/ <span th:text="${#numbers.formatDecimal(order.discount.finalAmount, 1, 'POINT', 2, 'COMMA')}">0,00</span></td>
+                            <td><span class="badge" th:classappend="${order.confirmed} ? 'badge-success' : 'badge-warning'" th:text="${order.status.displayName}">Pendiente</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

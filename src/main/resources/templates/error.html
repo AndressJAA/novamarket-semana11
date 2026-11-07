@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('No pudimos completar la solicitud')}"></head>
+<body class="error-page">
+<main class="error-card">
+    <a class="error-brand" th:href="@{/}"><span>N</span> NOVA Market</a>
+    <p class="error-code" th:text="${status ?: 'Error'}">Error</p>
+    <h1>No pudimos completar la solicitud</h1>
+    <p th:text="${message ?: 'La dirección puede no existir o se produjo un problema inesperado. Vuelve al inicio e inténtalo nuevamente.'}">No pudimos completar la solicitud.</p>
+    <a class="button button-primary" th:href="@{/}">Volver al dashboard</a>
+</main>
+</body>
+</html>

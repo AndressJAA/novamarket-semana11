@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Nuevo pedido')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar('new-order')}"></aside>
+    <button class="sidebar-backdrop" type="button" data-menu-close aria-label="Cerrar navegación"></button>
+
+    <main class="workspace">
+        <header th:replace="~{fragments/layout :: topbar('Nuevo pedido', 'Registra al cliente y calcula su descuento')}"></header>
+
+        <div class="page-content">
+            <nav class="breadcrumb" aria-label="Migas de pan">
+                <a th:href="@{/orders}">Pedidos</a>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">Nuevo pedido</span>
+            </nav>
+
+            <div class="page-heading compact-heading">
+                <div>
+                    <span class="eyebrow">Registro</span>
+                    <h2>Datos del pedido</h2>
+                    <p>El descuento se determina mediante la estrategia asociada a la categoría.</p>
+                </div>
+            </div>
+
+            <div class="form-layout">
+                <section class="panel form-panel">
+                    <form th:action="@{/orders}" th:object="${orderForm}" method="post" novalidate data-order-form>
+                        <div class="form-section-heading">
+                            <span>01</span>
+                            <div><h3>Información del cliente</h3><p>Identifica a la persona asociada al pedido.</p></div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="field field-wide">
+                                <label for="customerName">Nombre completo <span aria-hidden="true">*</span></label>
+                                <input id="customerName" type="text" th:field="*{customerName}"
+                                       th:classappend="${#fields.hasErrors('customerName')} ? 'is-invalid'"
+                                       maxlength="100" autocomplete="name" placeholder="Ej. Andrea Salazar"
+                                       aria-describedby="customerName-help customerName-error">
+                                <small id="customerName-help" class="field-help">Entre 2 y 100 caracteres.</small>
+                                <small id="customerName-error" class="field-error" th:if="${#fields.hasErrors('customerName')}" th:errors="*{customerName}">Error</small>
+                            </div>
+
+                            <div class="field">
+                                <label for="customerDocument">Documento <span aria-hidden="true">*</span></label>
+                                <input id="customerDocument" type="text" th:field="*{customerDocument}"
+                                       th:classappend="${#fields.hasErrors('customerDocument')} ? 'is-invalid'"
+                                       maxlength="15" autocomplete="off" placeholder="Ej. 74285916"
+                                       aria-describedby="customerDocument-help customerDocument-error">
+                                <small id="customerDocument-help" class="field-help">DNI, CE u otro identificador de 8 a 15 caracteres.</small>
+                                <small id="customerDocument-error" class="field-error" th:if="${#fields.hasErrors('customerDocument')}" th:errors="*{customerDocument}">Error</small>
+                            </div>
+
+                            <div class="field">
+                                <label for="clientCategory">Categoría <span aria-hidden="true">*</span></label>
+                                <select id="clientCategory" th:field="*{clientCategory}"
+                                        th:classappend="${#fields.hasErrors('clientCategory')} ? 'is-invalid'"
+                                        aria-describedby="clientCategory-help clientCategory-error" data-category-select>
+                                    <option th:each="category : ${categories}"
+                                            th:value="${category}"
+                                            th:text="${category.displayName}"
+                                            th:attr="data-rate=${discountRates.get(category).toPlainString()}">Cliente nuevo</option>
+                                </select>
+                                <small id="clientCategory-help" class="field-help">Define la política de descuento aplicable.</small>
+                                <small id="clientCategory-error" class="field-error" th:if="${#fields.hasErrors('clientCategory')}" th:errors="*{clientCategory}">Error</small>
+                            </div>
+                        </div>
+
+                        <div class="form-divider"></div>
+
+                        <div class="form-section-heading">
+                            <span>02</span>
+                            <div><h3>Importe de la operación</h3><p>Ingresa el subtotal antes de aplicar descuentos.</p></div>
+                        </div>
+
+                        <div class="field amount-field">
+                            <label for="amount">Importe del pedido <span aria-hidden="true">*</span></label>
+                            <div class="money-input" th:classappend="${#fields.hasErrors('amount')} ? 'is-invalid'">
+                                <span>S/</span>
+                                <input id="amount" type="number" th:field="*{amount}"
+                                       min="0.01" max="9999999999.99" step="0.01" inputmode="decimal"
+                                       placeholder="200.00" aria-describedby="amount-help amount-error" data-amount-input>
+                            </div>
+                            <small id="amount-help" class="field-help">Usa punto para los decimales y un máximo de dos cifras decimales.</small>
+                            <small id="amount-error" class="field-error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">Error</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <a class="button button-ghost" th:href="@{/orders}">Cancelar</a>
+                            <button class="button button-primary" type="submit">
+                                Registrar pedido
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 5 7 7-7 7-1.4-1.4 4.6-4.6H4v-2h12.2l-4.6-4.6L13 5Z"/></svg>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <aside class="order-preview" aria-labelledby="preview-title" aria-live="polite">
+                    <div class="preview-header">
+                        <span class="preview-kicker">Resumen estimado</span>
+                        <h3 id="preview-title">Cálculo del pedido</h3>
+                        <p>La vista previa se actualiza al cambiar el importe o la categoría.</p>
+                    </div>
+
+                    <div class="strategy-indicator">
+                        <span class="strategy-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18.5 2.5 3 3-16 16-3-3 16-16ZM7 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm10 10a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg></span>
+                        <div><small>Estrategia seleccionada</small><strong data-preview-category>Cliente nuevo</strong></div>
+                        <span class="rate-pill" data-preview-rate>5%</span>
+                    </div>
+
+                    <dl class="preview-breakdown">
+                        <div><dt>Importe inicial</dt><dd data-preview-subtotal>S/ 0,00</dd></div>
+                        <div class="discount-row"><dt>Descuento</dt><dd data-preview-discount>− S/ 0,00</dd></div>
+                        <div class="preview-total"><dt>Total a pagar</dt><dd data-preview-total>S/ 0,00</dd></div>
+                    </dl>
+
+                    <div class="preview-note">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 17h2v-6h-2v6Zm0-8h2V7h-2v2Zm1-7a10 10 0 1 1 0 20 10 10 0 0 1 0-20Z"/></svg>
+                        <p>El cálculo definitivo se realiza en el servidor con <strong>BigDecimal</strong> al registrar.</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

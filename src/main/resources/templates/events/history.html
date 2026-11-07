@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Eventos y notificaciones')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar('events')}"></aside>
+    <button class="sidebar-backdrop" type="button" data-menu-close aria-label="Cerrar navegación"></button>
+
+    <main class="workspace">
+        <header th:replace="~{fragments/layout :: topbar('Eventos y notificaciones', 'Trazabilidad verificable del patrón Observer')}"></header>
+
+        <div class="page-content">
+            <div class="page-heading">
+                <div>
+                    <span class="eyebrow">Patrón Observer</span>
+                    <h2>Historial de confirmaciones</h2>
+                    <p>Cada confirmación genera un evento único y una acción auditable por observador.</p>
+                </div>
+                <a class="button button-primary" th:href="@{/orders}">Ir a pedidos</a>
+            </div>
+
+            <section class="metrics-grid event-metrics" aria-label="Indicadores de eventos">
+                <article class="metric-card metric-card-primary"><div class="metric-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6l-2 3-2-3H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Z"/></svg></div><div><p>Eventos únicos</p><strong th:text="${summary.eventCount}">0</strong><span>OrderConfirmedEvent</span></div></article>
+                <article class="metric-card"><div class="metric-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 12c5.5 0 10 2.5 10 5.5V22H2v-2.5C2 16.5 6.5 14 12 14Z"/></svg></div><div><p>Procesamientos</p><strong th:text="${summary.processingCount}">0</strong><span>Acciones de observadores</span></div></article>
+                <article class="metric-card"><div class="metric-icon metric-icon-success"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1.2 14.4 6.7-6.7-1.4-1.4-5.3 5.3-2.9-2.9-1.4 1.4 4.3 4.3Z"/></svg></div><div><p>Exitosos</p><strong th:text="${summary.successfulProcessingCount}">0</strong><span>Acciones registradas</span></div></article>
+                <article class="metric-card"><div class="metric-icon metric-icon-danger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7h2v6h-2V7Zm0 8h2v2h-2v-2Zm1-13a10 10 0 1 1 0 20 10 10 0 0 1 0-20Z"/></svg></div><div><p>Fallidos</p><strong th:text="${summary.failedProcessingCount}">0</strong><span>Sin interrumpir a los demás</span></div></article>
+            </section>
+
+            <section class="observer-explanation">
+                <div class="flow-node flow-event"><strong>OrderConfirmedEvent</strong><small>Un evento identificable</small></div>
+                <span class="flow-arrow" aria-hidden="true">→</span>
+                <div class="flow-observers">
+                    <span>CustomerNotificationObserver</span>
+                    <span>WarehouseObserver</span>
+                    <span>AdministrationObserver</span>
+                </div>
+            </section>
+
+            <section class="panel" th:if="${#lists.isEmpty(history)}">
+                <div class="empty-state">
+                    <div class="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6l-2 3-2-3H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm3 5v2h10V8H7Zm0 4v2h7v-2H7Z"/></svg></div>
+                    <h3>Aún no hay eventos</h3>
+                    <p>Confirma un pedido pendiente para observar el evento y las tres reacciones registradas.</p>
+                    <a class="button button-secondary" th:href="@{/orders}">Revisar pedidos</a>
+                </div>
+            </section>
+
+            <div class="event-history" th:unless="${#lists.isEmpty(history)}">
+                <article class="event-card" th:each="entry : ${history}">
+                    <header class="event-card-header">
+                        <div class="event-card-title">
+                            <span class="event-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 3 14h8l-1 8 11-13h-8V2Z"/></svg></span>
+                            <div><span>OrderConfirmedEvent</span><h3>Pedido <a th:href="@{/orders/{id}(id=${entry.event.order.id})}" th:text="${'#' + entry.event.order.id}">#1</a> confirmado</h3></div>
+                        </div>
+                        <time th:text="${#temporals.format(entry.event.occurredAt, 'dd/MM/yyyy HH:mm:ss')}">07/11/2026</time>
+                    </header>
+                    <div class="event-metadata">
+                        <span>Identificador del evento</span>
+                        <code th:text="${entry.event.eventId}">uuid</code>
+                    </div>
+                    <div class="observer-list">
+                        <article class="observer-result"
+                                 th:each="result : ${entry.processingResults}"
+                                 th:classappend="${result.status.name() == 'SUCCESS'} ? 'observer-success' : 'observer-failed'">
+                            <span class="observer-marker" aria-hidden="true"></span>
+                            <div class="observer-copy">
+                                <div><strong th:text="${result.target.displayName}">Cliente</strong><code th:text="${result.observerName}">Observer</code></div>
+                                <p th:text="${result.message}">Acción registrada.</p>
+                                <small>Mismo evento: <code th:text="${result.eventId}">uuid</code></small>
+                            </div>
+                            <span class="badge" th:classappend="${result.status.name() == 'SUCCESS'} ? 'badge-success' : 'badge-error'" th:text="${result.status.displayName}">Procesado</span>
+                        </article>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
